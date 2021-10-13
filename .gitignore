@@ -1,0 +1,12 @@
+# Add exclusion for Python virtual environments
+**/venv/*
+**/__pycache__/*
+
+# Custom Pulumi exclusions
+/.pulumi/
+**/Pulumi.*.yaml
+*.pyc
+
+# VSCode settings exclusion
+/.vscode/
+*.pyc
