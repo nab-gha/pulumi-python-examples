@@ -33,3 +33,15 @@ An AWS account and the AWS CLI
   > NOTE: To use the AWS CLI to run session commands, the Session Manager plugin must also be installed on your local machine. For information, see [Install the Session Manager plugin for the AWS CLI](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html).
   - `aws --region $AWS_REGION ssm start-session --target <instanceid-db-0 id>`
 
+### Running unittests
+
+Reading Pulumi issues, documentation and blogs, I think this should work:
+
+    export PULUMI_PYTHON_PROJECT=example-one
+    export PULUMI_PYTHON_STACK=example-one
+    export PULUMI_CONFIG=$(yq eval Pulumi.${PULUMI_PYTHON_STACK}.yaml --output-format=json | jq -c '.config')
+    pytest
+
+But it fails
+
+    ERROR test_server.py - pulumi.config.ConfigMissingError: Missing required configuration variable 'project:application'
