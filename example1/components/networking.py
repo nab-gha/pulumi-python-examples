@@ -38,7 +38,7 @@ def build_port_mapping(source,destination):
 class NetworkingComponent(pulumi.ComponentResource):
     def __init__(self, name, args: NetworkingComponentArgs, opts=None):
         super().__init__("pkg:index:NetworkingComponent", name, None, opts)
-        self.ports = [build_port_mapping(22,22)]
+        self.ex1_ports = [build_port_mapping(22,22)]
         self.vpc = None
         self.igw = None
         self.route_table = None
@@ -193,9 +193,9 @@ class NetworkingComponent(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.ghes_sg = aws.ec2.SecurityGroup(
-            "ghesSg",
-            description="Allow ghes access",
+        self.ex1_sg = aws.ec2.SecurityGroup(
+            "ex1Sg",
+            description="Allow ex1 access",
             vpc_id=self.vpc.id,
             ingress=[
                 {
@@ -204,7 +204,7 @@ class NetworkingComponent(pulumi.ComponentResource):
                     "to_port": port["destination"],
                     "cidr_blocks": ["0.0.0.0/0"],
                 }
-                for port in self.ghes_ports
+                for port in self.ex1_ports
             ],
             egress=[
                 aws.ec2.SecurityGroupEgressArgs(
@@ -219,8 +219,8 @@ class NetworkingComponent(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.ghes_lb = aws.lb.LoadBalancer(
-            "ghes-load-balancer",
+        self.ex1_lb = aws.lb.LoadBalancer(
+            "ex1-load-balancer",
             internal=args.internal_lb,
             load_balancer_type="network",
             subnets=[subnet.id for subnet in self.public_subnets],
@@ -228,11 +228,11 @@ class NetworkingComponent(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
         
-        self.ghes_target_groups = {}
-        self.ghes_listeners = {}
-        for port in self.ghes_ports:
+        self.ex1_target_groups = {}
+        self.ex1_listeners = {}
+        for port in self.ex1_ports:
             tg = aws.lb.TargetGroup(
-                f"ghes-lb-tg-{port['destination']}",
+                f"ex1-lb-tg-{port['destination']}",
                 port=port["destination"],
                 protocol="TCP",
                 vpc_id=self.vpc.id,
@@ -240,11 +240,11 @@ class NetworkingComponent(pulumi.ComponentResource):
                 proxy_protocol_v2=args.internal_lb,
                 opts=pulumi.ResourceOptions(parent=self),
             )
-            self.ghes_target_groups[port["source"]] = tg
+            self.ex1_target_groups[port["source"]] = tg
 
-            self.ghes_listeners[port["source"]] = aws.lb.Listener(
-                f"ghes-lb-listener-{port['source']}",
-                load_balancer_arn=self.ghes_lb.arn,
+            self.ex1_listeners[port["source"]] = aws.lb.Listener(
+                f"ex1-lb-listener-{port['source']}",
+                load_balancer_arn=self.ex1_lb.arn,
                 port=port['source'],
                 protocol="TCP",
 
@@ -258,12 +258,12 @@ class NetworkingComponent(pulumi.ComponentResource):
             )
 
         pulumi.export("vpcId", self.vpc.id)
-        pulumi.export("LB-DNS-Name", self.ghes_lb.dns_name)
+        pulumi.export("LB-DNS-Name", self.ex1_lb.dns_name)
         self.register_outputs(
             {
                 "vpcId": self.vpc.id,
-                "LB-DNS-Name": self.ghes_lb.dns_name
+                "LB-DNS-Name": self.ex1_lb.dns_name
             }
         )
     
-        pulumi.export("Loadbalancer_DNS", self.ghes_lb.dns_name)
+        pulumi.export("Loadbalancer_DNS", self.ex1_lb.dns_name)

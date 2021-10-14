@@ -19,9 +19,8 @@ class ServerComponentArgs:
         root_volume_type="gp2",
         data_volume_size=200,
         data_volume_type="gp2",
-        ghe_version="2.22.7",
-        ghe_ami_owner="895557238572",
-        instance_type="c5.2xlarge",
+        ex1_ami_owner="482649550366",
+        instance_type="t2.micro",
         stack_name=None,
     ):
         self.subnet_id = subnet_id
@@ -35,8 +34,7 @@ class ServerComponentArgs:
         self.root_volume_type = root_volume_type
         self.data_volume_size = data_volume_size
         self.data_volume_type = data_volume_type
-        self.ghe_version = ghe_version
-        self.ghe_ami_owner = ghe_ami_owner
+        self.ex1_ami_owner = ex1_ami_owner
         self.vpc_security_group_ids = vpc_security_group_ids
         self.private_ips = private_ips
         self.stack_name = stack_name
@@ -50,7 +48,6 @@ class ServerComponent(pulumi.ComponentResource):
 
         instance_profile = aws.iam.InstanceProfile(
             f"instance-profile-{args.name}",
-            role=args.iam_role,
             opts=pulumi.ResourceOptions(parent=self),
         )
 
@@ -97,15 +94,6 @@ class ServerComponent(pulumi.ComponentResource):
 
     def get_user_data(self, args):
         return Output.all(
-            args.config_s3_url,
-            args.license_s3_url,
-            args.cw_agent_s3_url,
-            args.cw_report_status_script_s3_url,
-            args.cw_report_status_service_s3_url,
-            args.mgmt_pwd,
-            args.proxy_http,
-            args.proxy_https,
-            args.proxy_no,
             args.server_role,
             args.index,
             args.lb_dns,
@@ -114,18 +102,9 @@ class ServerComponent(pulumi.ComponentResource):
                 open(self.user_data_file)
                 .read()
                 .format(
-                    config_s3_url=args[0],
-                    license_s3_url=args[1],
-                    cw_agent_s3_url=args[2],
-                    report_status_script_s3_url=args[3],
-                    report_status_service_s3_url=args[4],
-                    mgmt_pwd=args[5],
-                    proxy_http=args[6],
-                    proxy_https=args[7],
-                    proxy_no=args[8],
-                    server_role=args[9],
-                    index=args[10],
-                    lb_dns=args[11]
+                    server_role=args[0],
+                    index=args[1],
+                    lb_dns=args[2]
                 )
             )
         )
@@ -133,13 +112,7 @@ class ServerComponent(pulumi.ComponentResource):
     def get_ami(self, args):
         return aws.ec2.get_ami(
             most_recent="true",
-            owners=[args.ghe_ami_owner],
-            filters=[
-                {
-                    "name": "name",
-                    "values": [f"GitHub Enterprise Server {args.ghe_version}"],
-                }
-            ],
+            owners=[args.ex1_ami_owner],
         )
 
 class BackupServerComponent(ServerComponent):
@@ -149,7 +122,6 @@ class BackupServerComponent(ServerComponent):
 
     def get_ami(self, args):
         return aws.ec2.get_ami(
-            owners=[CANONICAL_AMI_ID],
             most_recent="true",
             name_regex="ubuntu-focal-20.04-amd64"
 

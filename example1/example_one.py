@@ -1,7 +1,7 @@
 import pulumi
 from pulumi import Output
 import pulumi_aws as aws
-from components import networking,server,roles
+from components import networking,servers
 import json
 
 stack = pulumi.get_stack()
@@ -9,7 +9,7 @@ stack = pulumi.get_stack()
 config = pulumi.Config()
 app_config = config.require_object("application")
 network_config = config.require_object("networking")
-server_config = config.require_object("server")
+server_config = config.require_object("servers")
 server_roles = ["frontend", "db"]
 
 networking = networking.NetworkingComponent(
@@ -27,22 +27,22 @@ networking = networking.NetworkingComponent(
     ),
 )
 
-servers = {
+server_types = {
     "frontend": [],
     "db": [],
 }
 
-servers = {role: [] for role in server_roles}
+server_list = {role: [] for role in server_roles}
 for role in server_roles:
     if role in server_config:
         for index, conf in enumerate(server_config[role]["nodes"]):
             ip = conf["ip"]
             security_groups = [networking.internal_sg.id]
-            serverComponent = server.ServerComponent
+            serverComponent = servers.ServerComponent
             if role == "frontend":
                 security_groups.append(networking.ex1_sg.id)
 
-            serverArgs = server.ServerComponentArgs(
+            serverArgs = servers.ServerComponentArgs(
                 name=f"{stack}_cluster_{role}-server-{index}",
                 subnet_id=networking.private_subnets[0].id,
                 private_ips=[ip],
@@ -55,7 +55,7 @@ for role in server_roles:
                 data_volume_size=server_config[role]["volume_size"],
                 stack_name=stack,
             )
-            servers[role].append(
+            server_list[role].append(
                 serverComponent(
                     f"server-{role}-{index}",
                     serverArgs,
@@ -63,11 +63,11 @@ for role in server_roles:
             )
 
 # TODO: eventually this should be an autoscaling group
-for index, server in enumerate(servers["frontend"]):
+for index, server in enumerate(server_list["frontend"]):
     for port, tg in networking.ex1_target_groups.items():
         aws.lb.TargetGroupAttachment(
             f"tg-attachment-{index}-{port}",
             target_group_arn=tg.arn,
-            target_id=servers["frontend"][index].instance.id,
+            target_id=server_list["frontend"][index].instance.id,
             port= list(filter(lambda p: p['source'] == port, networking.ex1_ports))[0]['destination'],
         )

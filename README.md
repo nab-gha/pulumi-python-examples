@@ -11,13 +11,6 @@ Pulumi Python examples used to explore issues and approaches
 The *Infrastructure as Code* tool.
 
 - [Install Pulumi](https://www.pulumi.com/docs/get-started/install/)
-
-#### Docker
-
-Run the Pulumi tool inside a container.
-
-- [Install docker](https://docs.docker.com/docker-for-mac/install/)
-
 #### AWS
 
 An AWS account and the AWS CLI 
@@ -27,7 +20,7 @@ An AWS account and the AWS CLI
 ---
 ### Building Dev Cluster
 
-- cd to `example-one`
+- cd to `example1`
 - Start the dev cluster
   - create an S3 bucket and a prefix (folder) for storing your pulumi state 
   - copy the `Pulumi.dev.yaml` to `Pulumi.<stack>.yaml` and name the stack the same
@@ -38,5 +31,5 @@ An AWS account and the AWS CLI
 
 - Do the following on your local machine (or set your full aws config on the dev container)
   > NOTE: To use the AWS CLI to run session commands, the Session Manager plugin must also be installed on your local machine. For information, see [Install the Session Manager plugin for the AWS CLI](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html).
-  - `aws --region us-west-1 ssm start-session --target <instanceid-db-0 id>`
+  - `aws --region $AWS_REGION ssm start-session --target <instanceid-db-0 id>`
 
